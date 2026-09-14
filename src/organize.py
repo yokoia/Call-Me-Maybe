@@ -23,18 +23,19 @@ class CallMeMaybe(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     model: LLMModel
-    functions: list[FunctionDefinition] = Field(min_length=1)
+    functions: Sequence[FunctionDefinition] = Field(min_length=1)
 
     def generate_prompt(self, prompt: PromptInput) -> FunctionCallResult:
         """Process one prompt through a pipeline."""
 
         fn_name = pick_function(self.model, prompt.prompt,
                                 self.functions)
-        fn_def = [fn for fn in self.functions if fn.name == fn_name]
+        fnn_def: list[FunctionDefinition] = [
+            fn for fn in self.functions if fn.name == fn_name]
 
-        if not fn_def:
+        if not fnn_def:
             raise ValueError(f"Unknown function: {fn_name}.")
-        fn_def = fn_def[0]
+        fn_def: FunctionDefinition = fnn_def[0]
 
         numeric = [(name, definition)
                     for name, definition in fn_def.parameters.items()
