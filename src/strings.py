@@ -63,14 +63,12 @@ def extract_value(
         return extract_bool(model, request, param_name)
 
     prompt = make_value_prompt(request, function, param_name, values or {})
-    base_ids = encode_text_to_ids(model, prompt)
+    prompt_ids = encode_text_to_ids(model, prompt)
     generated: list[int] = []
 
     for _ in range(max_steps):
         logits = np.asarray(
-            model.get_logits_from_input_ids(base_ids + generated),
-            dtype=np.float64,
-        )
+            model.get_logits_from_input_ids(prompt_ids + generated))  # dtype=np.float64
         generated.append(int(np.argmax(logits)))
         text = model.decode(generated)
         value = closed_text(text)

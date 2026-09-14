@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from src.llm_protocol import LLMModel
 import numpy as np  # gives tools to manipulate arrays easly
@@ -32,9 +33,22 @@ def make_function_prompt(userprompt: str,
 def pick_function(llm: LLMModel, userprompt: str,
     functions: Sequence[FunctionDefinition]) -> str:
     """Choose one exact function name with constrained decoding."""
-
     if not functions:
         raise ValueError("No function definitions were provided.")
+
+    words = set(re.findall(r"[a-z0-9]+", userprompt.lower()))
+    function_words = {
+        word
+        for fn in functions
+        for word in re.findall(
+            r"[a-z0-9]+",
+            f"{fn.name} {fn.description}".lower(),
+        )
+        if len(word) > 2 and word != "function"
+    }
+
+    if not words & function_words:
+        raise ValueError("Prompt does not match any known function.")
 
     prompt_ids = encode_text_to_ids(
                 llm, make_function_prompt(userprompt, functions))
