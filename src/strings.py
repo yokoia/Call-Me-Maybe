@@ -1,70 +1,79 @@
 """Extract one string or boolean parameter."""
 
 from __future__ import annotations
-import numpy as np
+
+import json
 from collections.abc import Mapping
+
+import numpy as np
 
 from src.llm_protocol import LLMModel
 from src.classes import ParameterDefinition
 from src.encode import encode_text_to_ids
 
 
-def args_prompt(values: Mapping[str, object]) -> str:
-    """Prepare the extracted args for the prompt"""
-
-    parts = (f'{key}="{value}"'
-            if isinstance(value, str)
-            else f"{key}={value}"
-            for key, value in values.items())
-
+def format_args(values: Mapping[str, object]) -> str:
+    """Format already extracted parameters as function arguments."""
+    parts = (
+        f"{key}={json.dumps(value, ensure_ascii=False)}"
+        for key, value in values.items()
+    )
     return ", ".join(parts) + (", " if values else "")
+
 
 def make_value_prompt(
     request: str,
     function: str,
     param: str,
-    ex_values: Mapping[str, object]) -> str:
-    """Create the function-call prompt."""
+    values: Mapping[str, object],
+) -> str:
+    """Create the function-call completion prompt."""
+    return f'-> {request}\n{function}({format_args(values)}{param}="'
 
-    return f'{request}\n{function}({args_prompt(ex_values)}{param}="'
+
+def is_escaped(text: str, pos: int) -> bool:
+    """Return True when a quote at pos is escaped."""
+    backslashes = len(text[:pos]) - len(text[:pos].rstrip("\\"))
+    return backslashes % 2 == 1
 
 
-def text_finished(textt: str) -> str | None:
-    """Stopping once Qwen returns a quote"""
+def closed_text(text: str) -> str | None:
+    """Return content before the first non-escaped closing quote."""
+    text = text.lstrip()
+    start = int(text.startswith('"'))
 
-    text = textt.lstrip()  # "   john " == "john "
+    for pos in range(start, len(text)):
+        if text[pos] == '"' and not is_escaped(text, pos):
+            return text[start:pos]
 
-    if text.startswith('"'):
-        text = text[1:]
-    pos = text.find('"')
-    if pos == -1:
-        return None
-    return text[:pos]
+    return None
+
 
 def extract_value(
-    llm: LLMModel,
+    model: LLMModel,
     request: str,
     param_name: str,
     param_def: ParameterDefinition,
     values: Mapping[str, object] | None = None,
     max_steps: int = 64,
-    function: str = "") -> str:
+    function: str = "",
+) -> str:
     """Extract one schema-compatible non-numeric value."""
-
     if param_def.type.lower() in {"boolean", "bool"}:
-        return extract_bool(llm, request, param_name)
+        return extract_bool(model, request, param_name)
 
-    prompt = make_value_prompt(request, function, param_name,
-                               values or {})
-    prompt_ids = encode_text_to_ids(llm, prompt)
+    prompt = make_value_prompt(request, function, param_name, values or {})
+    base_ids = encode_text_to_ids(model, prompt)
     generated: list[int] = []
 
     for _ in range(max_steps):
-        logits = np.asarray(llm.get_logits_from_input_ids(
-                prompt_ids + generated))
+        logits = np.asarray(
+            model.get_logits_from_input_ids(base_ids + generated),
+            dtype=np.float64,
+        )
         generated.append(int(np.argmax(logits)))
-        text = llm.decode(generated)
-        value = text_finished(text)
+        text = model.decode(generated)
+        value = closed_text(text)
 
         if value is not None:
             if value:
@@ -76,9 +85,10 @@ def extract_value(
             if value:
                 return value
             raise ValueError(f"No string was extracted for {param_name!r}.")
+
     raise ValueError(
-        f"String extraction reached its step limit for parameter "
-        f"{param_name!r}.")
+        f"String extraction reached its step limit for parameter {param_name!r}.") # noqa E501
+
 
 def extract_bool(llm: LLMModel, request: str, param_name: str) -> str:
     """Select exactly one valid JSON boolean literal."""

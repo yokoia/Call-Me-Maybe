@@ -61,7 +61,7 @@ class CallMeMaybe(BaseModel):
                 continue
 
             params[name] = extract_value(
-                llm=self.model,
+                model=self.model,
                 request=prompt.prompt,
                 function=fn_def.name,
                 param_name=name,
