@@ -7,7 +7,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from pathlib import Path
-from classes import FunctionCallResult, FunctionDefinition, PromptInput
+from src.classes import FunctionCallResult, FunctionDefinition, PromptInput
 
 
 def read_json(path: Path) -> Any:

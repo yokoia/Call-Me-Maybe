@@ -21,7 +21,7 @@ class PromptInput(BaseModel):
     """One natural-language request."""
 
     model_config = ConfigDict(extra="forbid")
-    prompt_text: str = Field(min_length=1)
+    prompt: str = Field(min_length=1)
 
 
 class ParameterDefinition(BaseModel):

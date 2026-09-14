@@ -1,13 +1,13 @@
 """Extract only one function name with constrained decoding."""
 
 from __future__ import annotations
+
 from collections.abc import Sequence
-from llm_protocol import LLMModel
+from src.llm_protocol import LLMModel
 import numpy as np  # gives tools to manipulate arrays easly
 
-from classes import FunctionDefinition
+from src.classes import FunctionDefinition
 from src.encode import encode_text_to_ids
-
 
 
 def make_function_prompt(userprompt: str,

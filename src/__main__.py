@@ -22,7 +22,7 @@ def main() -> int:
             device=args.device,
         )
         caller = CallMeMaybe(model=model, functions=functions)
-        results = caller.invoke_all(prompts)
+        results = caller.generate_all_prompts(prompts)
         output_results(args.output, results)
         print(f"Created: {args.output}")
         return 0
@@ -32,8 +32,8 @@ def main() -> int:
         ValueError,
         KeyboardInterrupt,
         PermissionError,
-    ) as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+    ) as e:
+        print(f"Error: {e}", file=sys.stderr)
         return 1
 
 

@@ -28,18 +28,18 @@ class CallMeMaybe(BaseModel):
     def generate_prompt(self, prompt: PromptInput) -> FunctionCallResult:
         """Process one prompt through a pipeline."""
 
-        fn_name = pick_function(self.model, prompt.prompt_text,
+        fn_name = pick_function(self.model, prompt.prompt,
                                 self.functions)
         fn_def = [fn for fn in self.functions if fn.name == fn_name]
-        fn_def = fn_def[0]
 
-        if fn_def is None:
+        if not fn_def:
             raise ValueError(f"Unknown function: {fn_name}.")
+        fn_def = fn_def[0]
 
         numeric = [(name, definition)
                     for name, definition in fn_def.parameters.items()
                     if definition.type.lower() in NUMERIC_TYPES]
-        num_values = extract_numbers(self.model, prompt.prompt_text,
+        num_values = extract_numbers(self.model, prompt.prompt,
                                     numeric)
 
         params: dict[str, object] = {}
@@ -62,7 +62,7 @@ class CallMeMaybe(BaseModel):
 
             params[name] = extract_value(
                 llm=self.model,
-                request=prompt.prompt_text,
+                request=prompt.prompt,
                 function=fn_def.name,
                 param_name=name,
                 param_def=definition,
@@ -70,8 +70,8 @@ class CallMeMaybe(BaseModel):
             )
         ordered_params = {name: params[name] for name in fn_def.parameters}
         return FunctionCallResult(
-            prompt=prompt.prompt_text,
-            name=fn_def,
+            prompt=prompt.prompt,
+            name=fn_name,
             parameters=ordered_params
         )
 
@@ -80,4 +80,4 @@ class CallMeMaybe(BaseModel):
         prompts: Sequence[PromptInput],
     ) -> list[FunctionCallResult]:
         """Process prompts in their original order."""
-        return [self.generate_all_prompts(prompt) for prompt in prompts]
+        return [self.generate_prompt(prompt) for prompt in prompts]
