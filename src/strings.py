@@ -68,7 +68,7 @@ def extract_value(
 
     for _ in range(max_steps):
         logits = np.asarray(
-            model.get_logits_from_input_ids(prompt_ids + generated))  # dtype=np.float64
+            model.get_logits_from_input_ids(prompt_ids + generated))
         generated.append(int(np.argmax(logits)))
         text = model.decode(generated)
         value = closed_text(text)
@@ -85,7 +85,8 @@ def extract_value(
             raise ValueError(f"No string was extracted for {param_name!r}.")
 
     raise ValueError(
-        f"String extraction reached its step limit for parameter {param_name!r}.") # noqa E501
+        f"String extraction reached "
+        f"its step limit for parameter {param_name!r}.")
 
 
 def extract_bool(llm: LLMModel, request: str, param_name: str) -> str:
@@ -98,7 +99,8 @@ def extract_bool(llm: LLMModel, request: str, param_name: str) -> str:
         f"Request: {request}\n"
         "Value: ")
     prompt_ids = encode_text_to_ids(llm, prompt)
-    choices = {word: encode_text_to_ids(llm, word) for word in ("True", "False")}
+    choices = {
+        word: encode_text_to_ids(llm, word) for word in ("True", "False")}
     generated: list[int] = []
 
     logits = np.asarray(llm.get_logits_from_input_ids(

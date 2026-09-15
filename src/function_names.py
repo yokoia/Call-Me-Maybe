@@ -12,7 +12,7 @@ from src.encode import encode_text_to_ids
 
 
 def make_function_prompt(userprompt: str,
-    functions: Sequence[FunctionDefinition]) -> str:
+                         functions: Sequence[FunctionDefinition]) -> str:
     """Create the prompt used only for function selection."""
 
     choices = "\n".join(
@@ -30,26 +30,33 @@ def make_function_prompt(userprompt: str,
     )
 
 
+def unknown_function(userprompt: str,
+                     functions: Sequence[FunctionDefinition]):
+    """Function checking"""
+    prompt_words = set(re.findall(r"[a-z0-9]+", userprompt.lower()))
+    function_words = set()
+
+    for fn in functions:
+        text = f"{fn.name} {fn.description}".lower()
+        words = re.findall(r"[a-z0-9]+", text)
+
+        for word in words:
+            if len(word) > 2 and word != "function":
+                function_words.add(word)
+
+    check = prompt_words & function_words
+    if not check:
+        raise ValueError(
+            f"Prompt {userprompt} does not match any known function.")
+
+
 def pick_function(llm: LLMModel, userprompt: str,
-    functions: Sequence[FunctionDefinition]) -> str:
+                  functions: Sequence[FunctionDefinition]) -> str:
     """Choose one exact function name with constrained decoding."""
     if not functions:
         raise ValueError("No function definitions were provided.")
 
-    words = set(re.findall(r"[a-z0-9]+", userprompt.lower()))
-    function_words = {
-        word
-        for fn in functions
-        for word in re.findall(
-            r"[a-z0-9]+",
-            f"{fn.name} {fn.description}".lower(),
-        )
-        if len(word) > 2 and word != "function"
-    }
-
-    if not words & function_words:
-        raise ValueError("Prompt does not match any known function.")
-
+    unknown_function(userprompt, functions)
     prompt_ids = encode_text_to_ids(
                 llm, make_function_prompt(userprompt, functions))
     funcs_ids: dict[str, list[int]] = {
@@ -61,9 +68,10 @@ def pick_function(llm: LLMModel, userprompt: str,
     max_len = max([len(ids) for ids in funcs_ids.values()])
 
     for _ in range(max_len):
-        active = [ids for ids in funcs_ids.values()
-                    if ids[:len(generated)] == generated
-                    and len(ids) > len(generated)]
+        active = [
+            ids for ids in funcs_ids.values()
+            if ids[:len(generated)] == generated
+            and len(ids) > len(generated)]
 
         if not active:  # extra safety check
             break
@@ -83,7 +91,7 @@ def pick_function(llm: LLMModel, userprompt: str,
             if ids == generated:
                 if name == "__NO_MATCH__":
                     raise ValueError("__NO_MATCH__:"
-                        "No function matches the request.")
+                                     "No function matches the request.")
                 return name
 
     raise ValueError(

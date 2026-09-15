@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from src.function_names import pick_function
 from src.llm_protocol import LLMModel
 from src.classes import (FunctionCallResult, FunctionDefinition,
-                        PromptInput)
+                         PromptInput)
 from src.numbers import extract_numbers
 from src.strings import extract_value
 
@@ -38,15 +38,15 @@ class CallMeMaybe(BaseModel):
         fn_def: FunctionDefinition = fnn_def[0]
 
         numeric = [(name, definition)
-                    for name, definition in fn_def.parameters.items()
-                    if definition.type.lower() in NUMERIC_TYPES]
+                   for name, definition in fn_def.parameters.items()
+                   if definition.type.lower() in NUMERIC_TYPES]
         num_values = extract_numbers(self.model, prompt.prompt,
-                                    numeric)
+                                     numeric)
 
         params: dict[str, object] = {}
 
         for (name, definition), value in zip(
-            numeric, num_values, strict=True):
+             numeric, num_values, strict=True):
             if not math.isfinite(value):
                 raise ValueError(f"Parameter Error {name}")
 

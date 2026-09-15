@@ -17,10 +17,10 @@ NUMBER_RULE = re.compile(r"-?(?:\d+(?:\.\d+)?|\.\d+)")
 
 
 def force_one_number(llm: LLMModel,
-    userprompt: str,
-    param_name: str,
-    param_def: ParameterDefinition,
-    raw_number: str) -> float:
+                     userprompt: str,
+                     param_name: str,
+                     param_def: ParameterDefinition,
+                     raw_number: str) -> float:
     """Generate one exact number using constrained decoding."""
 
     prompt = (

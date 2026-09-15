@@ -23,6 +23,7 @@ def read_json(path: Path) -> Any:
         raise ValueError(
             f"Invalid JSON in {path} at line {e.lineno}, column {e.colno}.")
 
+
 def read_functions(path: Path) -> list[FunctionDefinition]:
     """Read functions JSON file"""
     data = read_json(path)
@@ -35,6 +36,7 @@ def read_functions(path: Path) -> list[FunctionDefinition]:
         raise ValueError(
             f"Invalid function definition in {path}: {e}")
 
+
 def read_prompts(path: Path) -> list[PromptInput]:
     """Read prompt JSON file"""
     data = read_json(path)
@@ -46,12 +48,14 @@ def read_prompts(path: Path) -> list[PromptInput]:
     except ValidationError as e:
         raise ValueError(f"Invalid prompt in {path}: {e}")
 
+
 def output_results(path: Path, results: list[FunctionCallResult]) -> None:
     """Write results as valid formatted JSON."""
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         data = [item.model_dump(mode="json") for item in results]
-        json_text = json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False)
+        json_text = json.dumps(
+            data, ensure_ascii=False, indent=2, allow_nan=False)
 
         with path.open("w", encoding="utf-8") as file:
             file.write(json_text + "\n")
