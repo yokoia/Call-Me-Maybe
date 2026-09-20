@@ -31,7 +31,7 @@ def make_function_prompt(userprompt: str,
 
 
 def unknown_function(userprompt: str,
-                     functions: Sequence[FunctionDefinition]):
+                     functions: Sequence[FunctionDefinition]) -> None:
     """Function checking"""
     prompt_words = set(re.findall(r"[a-z0-9]+", userprompt.lower()))
     function_words = set()
@@ -47,7 +47,7 @@ def unknown_function(userprompt: str,
     check = prompt_words & function_words
     if not check:
         raise ValueError(
-            f"Prompt {userprompt} does not match any known function.")
+            f"Prompt: {userprompt} does not match any known function.")
 
 
 def pick_function(llm: LLMModel, userprompt: str,
@@ -90,8 +90,8 @@ def pick_function(llm: LLMModel, userprompt: str,
         for name, ids in funcs_ids.items():
             if ids == generated:
                 if name == "__NO_MATCH__":
-                    raise ValueError("__NO_MATCH__:"
-                                     "No function matches the request.")
+                    raise ValueError(
+                        f"No function matches the request: {userprompt}")
                 return name
 
     raise ValueError(

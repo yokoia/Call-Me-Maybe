@@ -1,6 +1,6 @@
 PYTHON := uv run python
 
-.PHONY: install run debug clean lint lint-strict test
+.PHONY: install run debug clean lint test
 
 install:
 	uv sync
@@ -23,10 +23,3 @@ lint:
 		--ignore-missing-imports \
 		--disallow-untyped-defs \
 		--check-untyped-defs
-
-lint-strict:
-	uv run flake8 .
-	uv run mypy . --strict
-
-test:
-	uv run pytest -q

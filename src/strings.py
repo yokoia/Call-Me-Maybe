@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
 
 import numpy as np
@@ -13,11 +12,13 @@ from src.encode import encode_text_to_ids
 
 
 def format_args(values: Mapping[str, object]) -> str:
-    """Format already extracted parameters as function arguments."""
-    parts = (
-        f"{key}={json.dumps(value, ensure_ascii=False)}"
-        for key, value in values.items()
-    )
+    """Prepare the extracted args for the prompt"""
+
+    parts = (f'{key}="{value}"'
+             if isinstance(value, str)
+             else f"{key}={value}"
+             for key, value in values.items())
+
     return ", ".join(parts) + (", " if values else "")
 
 
